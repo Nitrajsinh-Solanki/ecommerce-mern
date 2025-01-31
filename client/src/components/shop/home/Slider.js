@@ -2,80 +2,133 @@ import React, { Fragment, useEffect, useContext, useState } from "react";
 import OrderSuccessMessage from "./OrderSuccessMessage";
 import { HomeContext } from "./";
 import { sliderImages } from "../../admin/dashboardAdmin/Action";
-import { prevSlide, nextSlide } from "./Mixins";
 
 const apiURL = process.env.REACT_APP_API_URL;
 
 const Slider = () => {
   const { data, dispatch } = useContext(HomeContext);
   const [slide, setSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
 
+  // Fetch slider images on component mount
   useEffect(() => {
     sliderImages(dispatch);
-  }, []);
+  }, [dispatch]);
+
+  // Automatic slider functionality
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleNextSlide();
+    }, 2000); // Slide changes every 2 seconds
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+  }, [slide, data.sliderImages]);
+
+  const handleNextSlide = () => {
+    if (slide === data.sliderImages.length) {
+      // Temporarily disable transitions and reset to first cloned image
+      setIsTransitioning(false);
+      setSlide(1);
+    } else {
+      setIsTransitioning(true); // Enable transitions
+      setSlide((prevSlide) => prevSlide + 1);
+    }
+  };
+
+  const handlePrevSlide = () => {
+    if (slide === 0) {
+      // Temporarily disable transitions and move to last cloned image
+      setIsTransitioning(false);
+      setSlide(data.sliderImages.length - 1);
+    } else {
+      setIsTransitioning(true); // Enable transitions
+      setSlide((prevSlide) => prevSlide - 1);
+    }
+  };
+
+  // Add clones for circular sliding
+  const sliderImagesWithClones =
+    data.sliderImages.length > 0
+      ? [
+          data.sliderImages[data.sliderImages.length - 1], // Clone of last image at the beginning
+          ...data.sliderImages,
+          data.sliderImages[0], // Clone of first image at the end
+        ]
+      : [];
 
   const sliderStyles = {
     wrapper: {
-      position: 'relative',
-      marginTop: '4rem',
-      backgroundColor: '#f3f4f6',
-      border: '2px solid #e5e7eb',
-      height: '400px',
-      overflow: 'hidden'
+      position: "relative",
+      marginTop: "6rem",
+      backgroundColor: "#f3f4f6",
+      border: "2px solid #e5e7eb",
+      height: "400px",
+      overflow: "hidden",
+    },
+    sliderContainer: {
+      display: "flex",
+      transition: isTransitioning ? "transform 0.8s ease-in-out" : "none",
+      transform: `translateX(-${slide * 100}%)`,
     },
     image: {
-      width: '100%',
-      height: '400px',
-      objectFit: 'cover',
-      objectPosition: 'center'
+      minWidth: "100%",
+      height: "400px",
+      objectFit: "cover",
+      objectPosition: "center",
     },
     navigationButton: {
-      position: 'absolute',
-      top: '50%',
-      transform: 'translateY(-50%)',
+      position: "absolute",
+      top: "50%",
+      transform: "translateY(-50%)",
       zIndex: 10,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '48px',
-      height: '48px',
-      cursor: 'pointer',
-      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-      borderRadius: '50%',
-      transition: 'all 0.3s ease'
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "48px",
+      height: "48px",
+      cursor: "pointer",
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      borderRadius: "50%",
+      transition: "all 0.3s ease",
     },
-    shopNowButton: {
-      background: '#303031',
-      padding: '0.5rem 1rem',
-      borderRadius: '0.25rem',
-      color: 'white',
-      fontSize: '1.5rem',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      textDecoration: 'none',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+  };
+
+  // Handle transition end for resetting cloned slides
+  const handleTransitionEnd = () => {
+    if (slide === data.sliderImages.length + 1) {
+      setIsTransitioning(false); // Temporarily disable transitions
+      setSlide(1); // Reset to the first real slide
+    }
+    if (slide === 0) {
+      setIsTransitioning(false); // Temporarily disable transitions
+      setSlide(data.sliderImages.length); // Reset to the last real slide
     }
   };
 
   return (
     <Fragment>
       <div style={sliderStyles.wrapper}>
-        {data.sliderImages.length > 0 && (
-          <img
-            style={sliderStyles.image}
-            src={`${apiURL}/uploads/customize/${data.sliderImages[slide].slideImage}`}
-            alt="slider"
-          />
-        )}
+        <div
+          style={sliderStyles.sliderContainer}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {sliderImagesWithClones.map((item, index) => (
+            <img
+              key={index}
+              style={sliderStyles.image}
+              src={`${apiURL}/uploads/customize/${item.slideImage}`}
+              alt={`slider-${index}`}
+            />
+          ))}
+        </div>
 
         {data?.sliderImages?.length > 0 && (
           <>
             <div
-              onClick={() => prevSlide(data.sliderImages.length, slide, setSlide)}
-              style={{...sliderStyles.navigationButton, left: '20px'}}
+              onClick={handlePrevSlide}
+              style={{ ...sliderStyles.navigationButton, left: "20px" }}
             >
               <svg
-                style={{width: '24px', height: '24px'}}
+                style={{ width: "24px", height: "24px" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -90,11 +143,11 @@ const Slider = () => {
             </div>
 
             <div
-              onClick={() => nextSlide(data.sliderImages.length, slide, setSlide)}
-              style={{...sliderStyles.navigationButton, right: '20px'}}
+              onClick={handleNextSlide}
+              style={{ ...sliderStyles.navigationButton, right: "20px" }}
             >
               <svg
-                style={{width: '24px', height: '24px'}}
+                style={{ width: "24px", height: "24px" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -106,29 +159,6 @@ const Slider = () => {
                   d="M9 5l7 7-7 7"
                 />
               </svg>
-            </div>
-
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <a
-                href="#shop"
-                style={sliderStyles.shopNowButton}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.backgroundColor = '#404042';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.backgroundColor = '#303031';
-                }}
-              >
-                Shop Now
-              </a>
             </div>
           </>
         )}

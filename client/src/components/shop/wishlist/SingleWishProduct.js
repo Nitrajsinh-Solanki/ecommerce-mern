@@ -107,16 +107,21 @@ const Product = () => {
   );
 };
 
+
+
 const SingleWishProduct = (props) => {
   return (
     <Fragment>
-      <section className="mx-4 mt-20 md:mx-12 md:mt-32 lg:mt-24">
-        <div className="text-2xl mx-2 mb-6">Wishlist</div>
+      <section className="mt-24 sm:mt-28 md:mt-32 lg:mt-36 xl:mt-40 px-4 md:px-8 lg:px-16">
+        <div className="text-2xl font-semibold text-gray-800 mb-4">
+          Wishlist
+        </div>
         {/* Product List */}
         <Product />
       </section>
     </Fragment>
   );
 };
+
 
 export default SingleWishProduct;
